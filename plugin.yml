@@ -4,6 +4,12 @@ version: 1.0
 main: uc\UtterCaution
 author: Primus
 
+commands:
+ warn:
+  permission: uc.command.warn
+  description: Did someone do something wrong? Tell them before punishing.
+  aliases: [warning, notice, caution, cavaet, monition]
+
 permissions:
  uc.*:
   default: false
