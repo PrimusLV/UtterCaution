@@ -1,0 +1,25 @@
+name: UtterCaution
+api: [1.12.0, 1.13.0]
+version: 1.0
+main: uc\UtterCaution
+author: Primus
+
+permissions:
+ uc.*:
+  default: false
+  description: Top permission
+  children:
+   uc.warn.*:
+    default: false
+    description: Top warn permission
+    children:
+     uc.warn.exempt:
+      default: false
+      description: Allows to avoid warn from other player
+   uc.command.*:
+    default: false
+    description: Top command permission
+    children:
+     uc.command.warn:
+      default: op
+      description: Permission for command /warn
