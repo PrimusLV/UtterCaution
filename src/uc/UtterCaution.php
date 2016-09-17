@@ -8,9 +8,21 @@ use pocketmine\command\CommandSender;
 use pocketmine\utils\TextFormat as TF;
 
 class UtterCaution extends PluginBase {
+  
+  const MESSAGE_NORMAL = TF::GRAY;
+  const MESSAGE_WARNING = TF::RED;
+  const MESSAGE_SUCCESS = TF::GREEN;
+  const MESSAGE_NOTICE = TF::YELLOW;
 
-  public function onEnable(){}
-  public function onDisable(){}
+  public function onEnable(){
+    @mkdir($this->getDataFolder());
+    $this->warnings = (new Config($this->getDataFolder() . "warnings.yml", Config::YAML))->getAll();
+    $this->saveDefaultConfig();
+  }
+  public function onDisable(){
+    (new Config($this->getDataFolder() . "warnings.yml", Config::YAML, $this->warnings))->save();
+    $this->getConfig()->save();
+  }
   
   
   /**
@@ -43,39 +55,69 @@ class UtterCaution extends PluginBase {
       
       $this->warn($player, $sender, $reason, true); // Target, Who warned?, For what?, Should i anounce it?
       
-      $sender->sendMessage(self::format("Warning for {$player->getName()} has been expressed!"));
-      return true; // Success don't send usage!
+      $sender->sendMessage(self::format("Warning for {$player->getName()} has been expressed!", self::MESSAGE_SUCCESS));
     }
     return true;
   }
   
+  /*  ___  ______ _____
+  *  / _ \ | ___ \_   _|
+  * / /_\ \| |_/ / | |  
+  * |  _  ||  __/  | |  
+  * | | | || |    _| |_ 
+  * \_| |_/\_|    \___/ 
+  */
+  
   /**
-  * 
-  * @param Player $player
+  * @param CommandSender $player who gave warning
   * @param Player $target
   * @param string $reason
-  * @param bool $anounce
+  * @param bool $announce
   */
-  public function warn(Player $player, Player $target, $reason, $anounce = true){
-    if($anounce){
-      $output = TF::GOLD."> ".TF::GRAY;
-      $output .= "Player ".TF::GOLD.$target->getName().TF::GOLD." has been warned by ".TF::GOLD.$player->getName().TF::GRAY."!";
-      if($reason != "") $output .= " Reason: '$reason'";
-      $this->getServer()->broadcastMessage($output);
+  public function warn(CommandSender $player, Player $target, $points = null, $reason = "", $announce = true){
+    // Save the warning
+    if(!is_int($points)) {
+      // First lets try to get points from config
+      if(!empty($reason)) {
+        $points = $this->getWarningPoints($reason);
+      } else {
+       $points = 0; 
+      }
+    }
+    $this->warnings[$target->getName()][] = [
+        "issuer" => $player->getName(),
+        "reason" => $reason,
+        "points" => $points
+      ];
+    if($announce){
+      $output = [TF::GOLD."> ".TF::GRAY];
+      $output[] = "Player ".TF::GOLD.$target->getName().TF::GOLD." has been warned by ".TF::GOLD.$player->getName().TF::GRAY."!";
+      if($reason != "") $output[] = " Reason: '$reason'";
+      if($points > 0) $output[] = "Warning points: ".$points;
+      foreach($output as $line) $this->getServer()->broadcastMessage($line);
       return true;
     } else {
-      $target->sendMessage(TF::GRAY."[".TF::DARK_RED."WARNING".TF::GRAY."] ".TF::GOLD.$player->getName().": ".TF::GRAY."$reason");
+      $target->sendMessage(self::format("You've been warned by ".TF::GOLD.$player->getName().", reason: ".TF::GRAY."$reason ($points wp.)", self::MESSAGE_WARNING));
       return true;
     }
+    $this->check($target);
   }
-
+  
+  public function getWarningPoints(string $reason) : int {
+    // TODO
+  }
+  
+  public function check(Player $player) {
+    // TODO
+  }
+  
   /**
-  * Message by default is gray add color code before message to color it!
-  *
   * @param string $message
+  * @param string $type message color
   * @return string
   */
-  private static function format($message){
-    return TF::GRAY."[".TF::GOLD."UtterCaution".TF::GRAY."] ".$message;
+  private static function format($message, $type = self::MESSAGE_NORMAL){
+    return TF::GRAY."[".TF::GOLD."UtterCaution".TF::GRAY."] ".$type.$message;
   }
+  
 }
